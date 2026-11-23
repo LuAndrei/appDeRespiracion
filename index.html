@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PurrBreath — El Templo del Ronroneo Zen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: #120d1d;
+      color: #f8fafc;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      position: relative;
+    }
+
+    #gameCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 1;
+    }
+
+    /* HUD Layer */
+    .hud {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 14px 20px 18px;
+    }
+
+    .hud-top {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    /* Top Bar */
+    .top-bar {
+      width: 100%;
+      max-width: 960px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      pointer-events: auto;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(24, 18, 38, 0.78);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 7px 14px;
+      border-radius: 999px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    .brand-icon {
+      font-size: 1.3rem;
+    }
+
+    .brand-title {
+      font-weight: 900;
+      font-size: 1rem;
+      letter-spacing: 0.3px;
+      background: linear-gradient(90deg, #fde68a, #f472b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stats-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      background: rgba(24, 18, 38, 0.78);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #e2e8f0;
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .pill:hover {
+      transform: translateY(-1px);
+      border-color: rgba(251, 191, 36, 0.5);
+      background: rgba(38, 28, 58, 0.9);
+    }
+
+    .pill.active-sound {
+      border-color: rgba(52, 211, 153, 0.6);
+      color: #6ee7b7;
+    }
+
+    /* Technique Info Card */
+    #techCard {
+      pointer-events: auto;
+      width: 100%;
+      max-width: 640px;
+      background: rgba(23, 18, 36, 0.84);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 20px;
+      padding: 12px 20px;
+      text-align: center;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.38);
+      transition: all 0.3s ease;
+    }
+
+    .tech-meta {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+
+    .badge-tradition {
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(251, 191, 36, 0.45);
+      background: rgba(251, 191, 36, 0.14);
+      color: #fcd34d;
+    }
+
+    .badge-timing {
+      font-size: 0.74rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+    }
+
+    .tech-title {
+      font-size: 1.18rem;
+      font-weight: 900;
+      color: #ffffff;
+      margin-bottom: 3px;
+    }
+
+    .tech-desc {
+      font-size: 0.84rem;
+      line-height: 1.35;
+      color: #cbd5e1;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    /* Bottom Controls */
+    .hud-bottom {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .controls-row {
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      font-family: 'Nunito', sans-serif;
+      border: none;
+      border-radius: 999px;
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #f59e0b, #ec4899);
+      color: #fff;
+      box-shadow: 0 6px 20px rgba(236, 72, 153, 0.35);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(236, 72, 153, 0.5);
+    }
+
+    .btn-secondary {
+      background: rgba(28, 22, 44, 0.85);
+      backdrop-filter: blur(10px);
+      color: #f1f5f9;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(45, 35, 70, 0.95);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Modals */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 7, 18, 0.78);
+      backdrop-filter: blur(8px);
+      z-index: 50;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal {
+      background: #1b142c;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 740px;
+      max-height: 84vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+    }
+
+    .modal-header {
+      padding: 16px 22px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h2 {
+      font-size: 1.2rem;
+      font-weight: 900;
+    }
+
+    .close-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: #fff;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      font-size: 1.1rem;
+      cursor: pointer;
+    }
+
+    .modal-body {
+      padding: 18px 22px;
+      overflow-y: auto;
+      display: grid;
+      gap: 12px;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 12px 22px 0;
+    }
+
+    .tab-btn {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tab-btn.active {
+      background: #f59e0b;
+      color: #120d1d;
+      border-color: #f59e0b;
+    }
+
+    .tech-option {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: left;
+    }
+
+    .tech-option:hover {
+      background: rgba(255, 255, 255, 0.09);
+      border-color: rgba(251, 191, 36, 0.5);
+    }
+
+    .tech-option.selected {
+      border-color: #fbbf24;
+      background: rgba(251, 191, 36, 0.12);
+    }
+
+    .cats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+
+    .cat-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 18px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .cat-card.selected {
+      border-color: #f472b6;
+      background: rgba(244, 114, 182, 0.14);
+    }
+
+    .cat-card.locked {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .cat-swatch {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      margin: 0 auto 10px;
+      border: 3px solid rgba(255,255,255,0.25);
+    }
+
+    @media (max-height: 680px) {
+      .hud { padding: 10px 14px 12px; }
+      #techCard { padding: 8px 14px; }
+      .tech-title { font-size: 1rem; }
+      .tech-desc { font-size: 0.78rem; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+
+  <div class="hud">
+    <div class="hud-top">
+      <div class="top-bar">
+        <div class="brand">
+          <span class="brand-icon">🐱</span>
+          <span class="brand-title">PurrBreath Zen</span>
+        </div>
+
+        <div class="stats-bar">
+          <div class="pill" id="btnSound" title="Activar o silenciar cuencos y ronroneo">
+            <span id="soundIcon">🔇</span> <span id="soundLabel">Audio Off</span>
+          </div>
+          <div class="pill" id="btnCats" title="Elegir gatito compañero">
+            🐾 <span id="catNameHud">Mochi</span>
+          </div>
+          <div class="pill" title="Puntos de Ronroneo y Nivel Zen">
+            ✨ Nivel <span id="zenLevel">1</span> · <span id="purrPoints">0</span> pts
+          </div>
+        </div>
+      </div>
+
+      <div id="techCard">
+        <div class="tech-meta">
+          <span class="badge-tradition" id="cardTradition">YÓGUICA (PRANAYAMA)</span>
+          <span class="badge-timing" id="cardTiming">4s Izquierda · 4s Retén · 6s Derecha</span>
+        </div>
+        <div class="tech-title" id="cardTitle">Nadi Shodhana (Respiración Alterna)</div>
+        <div class="tech-desc" id="cardDesc">
+          Purifica los canales energéticos Ida y Pingala, armonizando ambos hemisferios cerebrales.
+        </div>
+      </div>
+    </div>
+
+    <div class="hud-bottom">
+      <div class="controls-row">
+        <button class="btn btn-primary" id="btnToggleSession">
+          <span id="playIcon">▶</span> <span id="playText">Comenzar Sesión</span>
+        </button>
+        <button class="btn btn-secondary" id="btnOpenTechs">
+          🧘 Cambiar Técnica (10)
+        </button>
+        <button class="btn btn-secondary" id="btnNextTech" title="Siguiente técnica">
+          ⏭ Siguiente
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Técnicas -->
+  <div class="modal-backdrop" id="techModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Elige tu Práctica de Respiración</h2>
+        <button class="close-btn" id="closeTechModal">✕</button>
+      </div>
+      <div class="filter-tabs" id="traditionTabs">
+        <button class="tab-btn active" data-filter="ALL">Todas (10)</button>
+        <button class="tab-btn" data-filter="NEURO">Neurociencia</button>
+        <button class="tab-btn" data-filter="YOGA">Yóguica</button>
+        <button class="tab-btn" data-filter="BUDDHIST">Budista</button>
+        <button class="tab-btn" data-filter="ESOTERIC">Esotérica</button>
+      </div>
+      <div class="modal-body" id="techList"></div>
+    </div>
+  </div>
+
+  <!-- Modal Gatitos -->
+  <div class="modal-backdrop" id="catsModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Santuario de Gatitos Zen</h2>
+        <button class="close-btn" id="closeCatsModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:0.86rem; color:#cbd5e1;">
+          Completa ciclos de respiración para ganar puntos de ronroneo y despertar nuevos maestros felinos.
+        </p>
+        <div class="cats-grid" id="catsGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. DATOS DE TÉCNICAS (NEUROCIENCIA, YÓGUICA, BUDISTA, ESOTÉRICA)
+    // =========================================================================
+    const TECHNIQUES = [
+      {
+        id: 'nadi_shodhana',
+        category: 'YOGA',
+        tradition: 'YÓGUICA (PRANAYAMA)',
+        title: 'Nadi Shodhana (Respiración Alterna)',
+        timingText: '4s Izquierda · 4s Retén · 6s Derecha',
+        desc: 'Purifica los canales energéticos Ida y Pingala, armonizando ambos hemisferios cerebrales.',
+        colors: { skyTop: '#1f102e', skyBottom: '#4a1c40', aura: '#fbbf24', particle: '#fde68a' },
+        special: 'nostril',
+        phases: [
+          { type: 'inhale', label: 'Inhala fosa IZQUIERDA (Ida)', duration: 4, targetScale: 1.28, nostril: 'left' },
+          { type: 'hold', label: 'Retén en el entrecejo (Kumbhaka)', duration: 4, targetScale: 1.28, nostril: 'both' },
+          { type: 'exhale', label: 'Exhala fosa DERECHA (Pingala)', duration: 6, targetScale: 0.92, nostril: 'right' }
+        ]
+      },
+      {
+        id: 'physiological_sigh',
+        category: 'NEURO',
+        tradition: 'NEUROCIENCIA (STANFORD)',
+        title: 'Suspiro Fisiológico (Doble Inhalación)',
+        timingText: '2.5s Inhala + 1.5s Sorbo · 6s Exhala',
+        desc: 'Reabre los alvéolos pulmonares colapsados y activa el nervio vago para reducir el estrés en segundos.',
+        colors: { skyTop: '#0b1d33', skyBottom: '#163b5c', aura: '#38bdf8', particle: '#bae6fd' },
+        special: 'double_inhale',
+        phases: [
+          { type: 'inhale', label: 'Inhala profundo por la nariz', duration: 2.5, targetScale: 1.18 },
+          { type: 'inhale', label: '¡Segundo sorbo rápido de aire!', duration: 1.5, targetScale: 1.34 },
+          { type: 'exhale', label: 'Exhala largo y suave por la boca', duration: 6, targetScale: 0.90 }
+        ]
+      },
+      {
+        id: 'box_breathing',
+        category: 'NEURO',
+        tradition: 'NEUROCIENCIA & ENFOQUE',
+        title: 'Respiración Cuadrada (Box Breathing)',
+        timingText: '4s Inhala · 4s Retén · 4s Exhala · 4s Vacío',
+        desc: 'Regula el CO₂ en sangre y estabiliza la corteza prefrontal bajo alta presión mental.',
+        colors: { skyTop: '#0f172a', skyBottom: '#1e3a5f', aura: '#60a5fa', particle: '#93c5fd' },
+        special: 'box',
+        phases: [
+          { type: 'inhale', label: 'Inhala en 4 tiempos', duration: 4, targetScale: 1.28 },
+          { type: 'hold', label: 'Sostén con pulmones llenos', duration: 4, targetScale: 1.28 },
+          { type: 'exhale', label: 'Exhala en 4 tiempos', duration: 4, targetScale: 0.92 },
+          { type: 'hold_empty', label: 'Descansa en el vacío', duration: 4, targetScale: 0.92 }
+        ]
+      },
+      {
+        id: 'coherence_55',
+        category: 'NEURO',
+        tradition: 'NEUROCIENCIA CARDÍACA',
+        title: 'Coherencia Cardíaca (5.5s - 5.5s)',
+        timingText: '5.5s Inhala · 5.5s Exhala (5.5 resp/min)',
+        desc: 'Sincroniza la variabilidad de la frecuencia cardíaca (HRV) con las ondas cerebrales alfa.',
+        colors: { skyTop: '#062624', skyBottom: '#114b46', aura: '#34d399', particle: '#a7f3d0' },
+        special: 'heart',
+        phases: [
+          { type: 'inhale', label: 'Inhala fluido hacia el corazón', duration: 5.5, targetScale: 1.28 },
+          { type: 'exhale', label: 'Exhala sin pausas bruscas', duration: 5.5, targetScale: 0.92 }
+        ]
+      },
+      {
+        id: 'sama_vritti',
+        category: 'YOGA',
+        tradition: 'YÓGUICA (PRANAYAMA)',
+        title: 'Sama Vritti (Respiración Igualada)',
+        timingText: '5s Inhala · 2s Pausa · 5s Exhala · 2s Pausa',
+        desc: 'Calma las fluctuaciones de la mente (Chitta Vritti) mediante simetría rítmica.',
+        colors: { skyTop: '#231338', skyBottom: '#432366', aura: '#c084fc', particle: '#e9d5ff' },
+        special: 'normal',
+        phases: [
+          { type: 'inhale', label: 'Inhala expandiendo el abdomen', duration: 5, targetScale: 1.28 },
+          { type: 'hold', label: 'Pausa serena', duration: 2, targetScale: 1.28 },
+          { type: 'exhale', label: 'Exhala soltando tensiones', duration: 5, targetScale: 0.92 },
+          { type: 'hold_empty', label: 'Silencio interior', duration: 2, targetScale: 0.92 }
+        ]
+      },
+      {
+        id: 'bhramari',
+        category: 'YOGA',
+        tradition: 'YÓGUICA (PRANAYAMA)',
+        title: 'Bhramari (Ronroneo de la Abeja)',
+        timingText: '4s Inhala · 7s Exhala vibrando "Mmmm"',
+        desc: 'La vibración sonora aumenta 15 veces el óxido nítrico nasal y tranquiliza la amígdala.',
+        colors: { skyTop: '#291709', skyBottom: '#573112', aura: '#f59e0b', particle: '#fde047' },
+        special: 'purr_vibe',
+        phases: [
+          { type: 'inhale', label: 'Inhala suave por la nariz', duration: 4, targetScale: 1.28 },
+          { type: 'exhale', label: 'Exhala ronroneando "Mmmmm..."', duration: 7, targetScale: 0.90 }
+        ]
+      },
+      {
+        id: 'anapanasati',
+        category: 'BUDDHIST',
+        tradition: 'BUDISTA (VIPASSANA / ZEN)',
+        title: 'Anapanasati (Atención Plena al Aire)',
+        timingText: '4s Inhala consciente · 6s Exhala soltando',
+        desc: 'Observa el roce sutil del aire en las fosas nasales sin juzgar, anclando la mente al presente.',
+        colors: { skyTop: '#1c1917', skyBottom: '#3f362f', aura: '#fb923c', particle: '#fed7aa' },
+        special: 'zen_lotus',
+        phases: [
+          { type: 'inhale', label: 'Sé consciente: estoy inhalando', duration: 4, targetScale: 1.25 },
+          { type: 'exhale', label: 'Sé consciente: estoy exhalando', duration: 6, targetScale: 0.93 }
+        ]
+      },
+      {
+        id: 'tonglen',
+        category: 'BUDDHIST',
+        tradition: 'BUDISTA TIBETANA (VAJRAYANA)',
+        title: 'Tonglen (Alquimia de la Compasión)',
+        timingText: '5s Inhala densidad · 2s Transforma · 6s Irradia luz',
+        desc: 'Inhala el peso emocional como humo gris, transfórmalo en el corazón y exhala luz dorada.',
+        colors: { skyTop: '#27121e', skyBottom: '#541e39', aura: '#f472b6', particle: '#fbcfe8' },
+        special: 'tonglen',
+        phases: [
+          { type: 'inhale', label: 'Inhala el peso como humo suave', duration: 5, targetScale: 1.28 },
+          { type: 'hold', label: 'Transmútalo en luz en tu corazón', duration: 2, targetScale: 1.30 },
+          { type: 'exhale', label: 'Irradia paz y calidez dorada', duration: 6, targetScale: 0.92 }
+        ]
+      },
+      {
+        id: 'microcosmic_orbit',
+        category: 'ESOTERIC',
+        tradition: 'ESOTÉRICA (TAOÍSMO ALQUÍMICO)',
+        title: 'Órbita Microcósmica (Qi Circulante)',
+        timingText: '5s Sube por columna · 2s Corona · 5s Baja frontal',
+        desc: 'Guía la energía vital (Qi) ascendiendo por el canal Gobernador y descendiendo por el Funcional.',
+        colors: { skyTop: '#120c29', skyBottom: '#2b1b5e', aura: '#a78bfa', particle: '#ddd6fe' },
+        special: 'orbit',
+        phases: [
+          { type: 'inhale', label: 'Sube la luz por la columna vertebral', duration: 5, targetScale: 1.28 },
+          { type: 'hold', label: 'Sostén en la coronilla (Baihui)', duration: 2, targetScale: 1.28 },
+          { type: 'exhale', label: 'Desciende al Dantian (abdomen)', duration: 5, targetScale: 0.92 }
+        ]
+      },
+      {
+        id: 'chandra_bhedana',
+        category: 'ESOTERIC',
+        tradition: 'ESOTÉRICA (TANTRA LUNAR)',
+        title: 'Chandra Bhedana (Respiración Lunar)',
+        timingText: '4s Inhala Luna · 4s Retén · 6s Exhala calma',
+        desc: 'Activa la corriente lunar refrescante (Ida Nadi) para disolver el calor mental e inducir sueños lúcidos.',
+        colors: { skyTop: '#091126', skyBottom: '#192b59', aura: '#93c5fd', particle: '#e0f2fe' },
+        special: 'moon',
+        phases: [
+          { type: 'inhale', label: 'Absorbe néctar lunar fresco', duration: 4, targetScale: 1.28 },
+          { type: 'hold', label: 'Irradia frescura plateada', duration: 4, targetScale: 1.28 },
+          { type: 'exhale', label: 'Disuelve toda agitación mental', duration: 6, targetScale: 0.92 }
+        ]
+      }
+    ];
+
+    const CATS = [
+      {
+        id: 'mochi',
+        name: 'Mochi Naranja',
+        title: 'Aprendiz del Ronroneo',
+        unlockLevel: 1,
+        body: '#f59e0b',
+        belly: '#fef3c7',
+        earInner: '#fb7185',
+        accent: '#b45309',
+        gem: '#34d399'
+      },
+      {
+        id: 'luna',
+        name: 'Luna Nebulosa',
+        title: 'Guardiana Astral',
+        unlockLevel: 2,
+        body: '#475569',
+        belly: '#cbd5e1',
+        earInner: '#c084fc',
+        accent: '#1e293b',
+        gem: '#38bdf8'
+      },
+      {
+        id: 'kael',
+        name: 'Kael Siamés',
+        title: 'Místico del Entrecejo',
+        unlockLevel: 3,
+        body: '#f5e6d3',
+        belly: '#fffbeb',
+        earInner: '#f472b6',
+        accent: '#5c3a21',
+        gem: '#f43f5e'
+      },
+      {
+        id: 'yuki',
+        name: 'Yuki Loto Nevado',
+        title: 'Gran Maestro Iluminado',
+        unlockLevel: 4,
+        body: '#f8fafc',
+        belly: '#ffffff',
+        earInner: '#fda4af',
+        accent: '#cbd5e1',
+        gem: '#fbbf24'
+      }
+    ];
+
+    // =========================================================================
+    // 2. ESTADO GLOBAL Y PERSISTENCIA
+    // =========================================================================
+    const state = {
+      currentTechIndex: 0,
+      selectedCatId: localStorage.getItem('pb_cat') || 'mochi',
+      purrPoints: parseInt(localStorage.getItem('pb_points') || '0', 10),
+      isRunning: false,
+      phaseIndex: 0,
+      phaseElapsed: 0,
+      cyclesCompleted: 0,
+      soundEnabled: false,
+      filterCategory: 'ALL'
+    };
+
+    function getZenLevel() {
+      return Math.floor(state.purrPoints / 30) + 1;
+    }
+
+    function saveProgress() {
+      localStorage.setItem('pb_points', state.purrPoints.toString());
+      localStorage.setItem('pb_cat', state.selectedCatId);
+    }
+
+    // =========================================================================
+    // 3. SINTETIZADOR ZEN (WEB AUDIO API PROCEDURAL)
+    // =========================================================================
+    class ZenAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.purrOsc = null;
+        this.purrLfo = null;
+        this.purrGain = null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioCtx();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playBowl(freq = 256) {
+        if (!state.soundEnabled) return;
+        this.init();
+        const now = this.ctx.currentTime;
+
+        const osc1 = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc1.type = 'sine';
+        osc2.type = 'triangle';
+        osc1.frequency.setValueAtTime(freq, now);
+        osc2.frequency.setValueAtTime(freq * 1.5, now);
+
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.exponentialRampToValueAtTime(0.14, now + 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.6);
+
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc1.start(now);
+        osc2.start(now);
+        osc1.stop(now + 2.7);
+        osc2.stop(now + 2.7);
+      }
+
+      startPurr(isPurrMode = false) {
+        if (!state.soundEnabled) return;
+        this.init();
+        this.stopPurr();
+
+        const now = this.ctx.currentTime;
+        this.purrOsc = this.ctx.createOscillator();
+        this.purrLfo = this.ctx.createOscillator();
+        const lfoGain = this.ctx.createGain();
+        this.purrGain = this.ctx.createGain();
+
+        this.purrOsc.type = 'sawtooth';
+        this.purrOsc.frequency.setValueAtTime(isPurrMode ? 55 : 42, now);
+
+        // Filtro paso bajo para calidez felina
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(140, now);
+
+        // Modulación de vibración de ronroneo (~26 Hz)
+        this.purrLfo.type = 'sine';
+        this.purrLfo.frequency.setValueAtTime(26, now);
+        lfoGain.gain.setValueAtTime(0.03, now);
+
+        this.purrGain.gain.setValueAtTime(0.001, now);
+        this.purrGain.gain.linearRampToValueAtTime(isPurrMode ? 0.08 : 0.045, now + 0.4);
+
+        this.purrLfo.connect(lfoGain);
+        lfoGain.connect(this.purrGain.gain);
+
+        this.purrOsc.connect(filter);
+        filter.connect(this.purrGain);
+        this.purrGain.connect(this.ctx.destination);
+
+        this.purrOsc.start(now);
+        this.purrLfo.start(now);
+      }
+
+      stopPurr() {
+        if (this.purrOsc && this.ctx) {
+          try {
+            const now = this.ctx.currentTime;
+            this.purrGain.gain.setTargetAtTime(0.0001, now, 0.1);
+            this.purrOsc.stop(now + 0.35);
+            this.purrLfo.stop(now + 0.35);
+          } catch (e) {}
+          this.purrOsc = null;
+          this.purrLfo = null;
+        }
+      }
+    }
+
+    const audio = new ZenAudioEngine();
+
+    // =========================================================================
+    // 4. MOTOR 2D ESTILO CONSTRUCT 3 (SINE, TWEEN, SPRING, PARALLAX, PARTICLES)
+    // =========================================================================
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+
+    function resizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Propiedades animadas del gatito (Behaviors tipo Construct 3)
+    const catRig = {
+      breathScale: 1.0,
+      targetBreathScale: 1.0,
+      sineTime: 0,
+      earSpring: 0,
+      earVelocity: 0,
+      blinkTimer: 0,
+      isBlinking: false,
+      pawLeftY: 0,
+      pawRightY: 0,
+      orbitAngle: 0,
+      skyCurrentTop: [31, 16, 46],
+      skyCurrentBottom: [74, 28, 64]
+    };
+
+    // Partículas ambientales
+    const particles = Array.from({ length: 45 }, () => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      r: 1.5 + Math.random() * 3,
+      speedY: -0.2 - Math.random() * 0.45,
+      speedX: (Math.random() - 0.5) * 0.3,
+      alpha: 0.2 + Math.random() * 0.6,
+      phase: Math.random() * Math.PI * 2
+    }));
+
+    function hexToRgb(hex) {
+      const clean = hex.replace('#', '');
+      return [
+        parseInt(clean.substring(0, 2), 16),
+        parseInt(clean.substring(2, 4), 16),
+        parseInt(clean.substring(4, 6), 16)
+      ];
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function triggerPhaseChange(phase) {
+      catRig.earVelocity = 5.5; // Impulso de resorte en orejas
+      if (phase.type === 'inhale') {
+        audio.stopPurr();
+        audio.playBowl(396);
+      } else if (phase.type === 'hold' || phase.type === 'hold_empty') {
+        audio.stopPurr();
+        audio.playBowl(528);
+      } else if (phase.type === 'exhale') {
+        const tech = TECHNIQUES[state.currentTechIndex];
+        audio.playBowl(264);
+        audio.startPurr(tech.special === 'purr_vibe');
+      }
+    }
+
+    // Cálculo seguro del espacio libre entre #techCard y los botones inferiores
+    function getSafeStageLayout() {
+      const cardEl = document.getElementById('techCard');
+      const bottomEl = document.querySelector('.hud-bottom');
+      const cardRect = cardEl ? cardEl.getBoundingClientRect() : { bottom: 160 };
+      const bottomRect = bottomEl ? bottomEl.getBoundingClientRect() : { top: height - 70 };
+
+      const topSafe = cardRect.bottom + 14;
+      const bottomSafe = bottomRect.top - 14;
+      const availableH = Math.max(220, bottomSafe - topSafe);
+
+      const promptY = topSafe + Math.min(26, availableH * 0.10);
+      const centerY = topSafe + availableH * 0.57;
+      const baseRadius = Math.min(width * 0.24, availableH * 0.34, 125);
+
+      return { promptY, centerY, baseRadius };
+    }
+
+    let lastTimestamp = performance.now();
+
+    function update(dt) {
+      const tech = TECHNIQUES[state.currentTechIndex];
+      catRig.sineTime += dt;
+
+      // Transición suave de cielo (Lerp)
+      const targetTop = hexToRgb(tech.colors.skyTop);
+      const targetBottom = hexToRgb(tech.colors.skyBottom);
+      for (let i = 0; i < 3; i++) {
+        catRig.skyCurrentTop[i] = lerp(catRig.skyCurrentTop[i], targetTop[i], dt * 2.5);
+        catRig.skyCurrentBottom[i] = lerp(catRig.skyCurrentBottom[i], targetBottom[i], dt * 2.5);
+      }
+
+      // Parpadeo natural
+      catRig.blinkTimer += dt;
+      if (!catRig.isBlinking && catRig.blinkTimer > 3.6) {
+        catRig.isBlinking = true;
+        catRig.blinkTimer = 0;
+      } else if (catRig.isBlinking && catRig.blinkTimer > 0.16) {
+        catRig.isBlinking = false;
+        catRig.blinkTimer = 0;
+      }
+
+      // Física Spring para orejas
+      const stiffness = 140;
+      const damping = 10;
+      const force = -stiffness * catRig.earSpring - damping * catRig.earVelocity;
+      catRig.earVelocity += force * dt;
+      catRig.earSpring += catRig.earVelocity * dt;
+
+      // Lógica de respiración
+      let targetLeftPaw = 0;
+      let targetRightPaw = 0;
+
+      if (state.isRunning) {
+        const currentPhase = tech.phases[state.phaseIndex];
+        state.phaseElapsed += dt;
+        catRig.targetBreathScale = currentPhase.targetScale;
+
+        // Patitas alternas en Nadi Shodhana
+        if (tech.special === 'nostril') {
+          if (currentPhase.nostril === 'left') targetRightPaw = 1; // Tapa derecha, respira izquierda
+          if (currentPhase.nostril === 'right') targetLeftPaw = 1; // Tapa izquierda, respira derecha
+        }
+
+        // Órbita microcósmica
+        if (tech.special === 'orbit') {
+          const progress = Math.min(1, state.phaseElapsed / currentPhase.duration);
+          if (currentPhase.type === 'inhale') {
+            catRig.orbitAngle = lerp(Math.PI * 0.5, -Math.PI * 0.5, progress);
+          } else if (currentPhase.type === 'exhale') {
+            catRig.orbitAngle = lerp(-Math.PI * 0.5, -Math.PI * 1.5, progress);
+          }
+        }
+
+        if (state.phaseElapsed >= currentPhase.duration) {
+          state.phaseElapsed = 0;
+          state.phaseIndex++;
+          if (state.phaseIndex >= tech.phases.length) {
+            state.phaseIndex = 0;
+            state.cyclesCompleted++;
+            state.purrPoints += 10;
+            saveProgress();
+            updateHudStats();
+          }
+          triggerPhaseChange(tech.phases[state.phaseIndex]);
+        }
+      } else {
+        // Respiración pasiva suave en reposo
+        catRig.targetBreathScale = 1.0 + Math.sin(catRig.sineTime * 2) * 0.035;
+      }
+
+      catRig.breathScale = lerp(catRig.breathScale, catRig.targetBreathScale, dt * 4.5);
+      catRig.pawLeftY = lerp(catRig.pawLeftY, targetLeftPaw, dt * 8);
+      catRig.pawRightY = lerp(catRig.pawRightY, targetRightPaw, dt * 8);
+
+      // Partículas
+      const currentPhase = state.isRunning ? tech.phases[state.phaseIndex] : null;
+      particles.forEach((p) => {
+        p.phase += dt * 2;
+        if (state.isRunning && currentPhase) {
+          if (currentPhase.type === 'inhale') {
+            p.y += p.speedY * 1.8;
+          } else if (currentPhase.type === 'exhale') {
+            p.y -= p.speedY * 1.4;
+          } else {
+            p.y += p.speedY * 0.3;
+          }
+        } else {
+          p.y += p.speedY;
+        }
+        p.x += Math.sin(p.phase) * 0.25 + p.speedX;
+
+        if (p.y < -10) { p.y = height + 10; p.x = Math.random() * width; }
+        if (p.y > height + 10) { p.y = -10; p.x = Math.random() * width; }
+        if (p.x < -10) p.x = width + 10;
+        if (p.x > width + 10) p.x = -10;
+      });
+    }
+
+    function drawParallaxMountains() {
+      // Capa lejana
+      ctx.fillStyle = 'rgba(10, 7, 20, 0.28)';
+      ctx.beginPath();
+      ctx.moveTo(0, height);
+      for (let x = 0; x <= width + 80; x += 80) {
+        const y = height * 0.72 - Math.sin(x * 0.004 + catRig.sineTime * 0.08) * 45 - Math.cos(x * 0.009) * 25;
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(width, height);
+      ctx.closePath();
+      ctx.fill();
+
+      // Capa cercana
+      ctx.fillStyle = 'rgba(8, 5, 16, 0.42)';
+      ctx.beginPath();
+      ctx.moveTo(0, height);
+      for (let x = 0; x <= width + 60; x += 60) {
+        const y = height * 0.84 - Math.cos(x * 0.006 - catRig.sineTime * 0.12) * 30;
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(width, height);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawCat(cx, cy, scaleFactor) {
+      const cat = CATS.find(c => c.id === state.selectedCatId) || CATS[0];
+      const tech = TECHNIQUES[state.currentTechIndex];
+      const floatY = Math.sin(catRig.sineTime * 2.4) * 5;
+      const bScale = catRig.breathScale;
+
+      ctx.save();
+      ctx.translate(cx, cy + floatY);
+      ctx.scale(scaleFactor, scaleFactor);
+
+      // Cojín de meditación
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+      ctx.beginPath();
+      ctx.ellipse(0, 68, 72, 16, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#451a03';
+      ctx.beginPath();
+      ctx.ellipse(0, 60, 66, 15, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(0, 60, 62, 12, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Cola animada (Sine)
+      const tailSwing = Math.sin(catRig.sineTime * 3.1) * 0.22;
+      ctx.save();
+      ctx.translate(36, 42);
+      ctx.rotate(tailSwing);
+      ctx.strokeStyle = cat.body;
+      ctx.lineWidth = 14;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(32, -12, 24, -44);
+      ctx.stroke();
+
+      ctx.strokeStyle = cat.accent;
+      ctx.lineWidth = 14;
+      ctx.beginPath();
+      ctx.moveTo(26, -32);
+      ctx.quadraticCurveTo(26, -40, 24, -44);
+      ctx.stroke();
+      ctx.restore();
+
+      // Cuerpo con expansión respiratoria
+      ctx.save();
+      ctx.scale(bScale, 1 + (bScale - 1) * 0.55);
+
+      ctx.fillStyle = cat.body;
+      ctx.beginPath();
+      ctx.ellipse(0, 24, 44, 40, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Pancita
+      ctx.fillStyle = cat.belly;
+      ctx.beginPath();
+      ctx.ellipse(0, 27, 29, 28, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Cabeza
+      const headY = -24 - (bScale - 1) * 14;
+      ctx.save();
+      ctx.translate(0, headY);
+
+      // Orejas con física Spring
+      const earAngle = catRig.earSpring * 0.04;
+      [-1, 1].forEach((dir) => {
+        ctx.save();
+        ctx.translate(dir * 26, -24);
+        ctx.rotate(dir * (0.22 + earAngle));
+
+        ctx.fillStyle = cat.body;
+        ctx.beginPath();
+        ctx.moveTo(-14, 14);
+        ctx.lineTo(0, -18);
+        ctx.lineTo(14, 14);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = cat.earInner;
+        ctx.beginPath();
+        ctx.moveTo(-8, 10);
+        ctx.lineTo(0, -10);
+        ctx.lineTo(8, 10);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // Rostro base
+      ctx.fillStyle = cat.body;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 40, 32, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Gema / Tercer ojo en la frente
+      ctx.fillStyle = cat.gem;
+      ctx.beginPath();
+      ctx.ellipse(0, -14, 6.5, 4.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Mejillas sonrojadas
+      ctx.fillStyle = 'rgba(251, 113, 133, 0.45)';
+      ctx.beginPath();
+      ctx.ellipse(-22, 6, 7, 4.5, 0, 0, Math.PI * 2);
+      ctx.ellipse(22, 6, 7, 4.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Ojos (cerrados en paz si está exhalando o parpadeando)
+      const currentPhase = state.isRunning ? tech.phases[state.phaseIndex] : null;
+      const eyesClosed = catRig.isBlinking || (currentPhase && (currentPhase.type === 'exhale' || currentPhase.type === 'hold'));
+
+      ctx.strokeStyle = '#1e293b';
+      ctx.fillStyle = '#1e293b';
+      ctx.lineWidth = 2.6;
+      ctx.lineCap = 'round';
+
+      [-15, 15].forEach((ex) => {
+        if (eyesClosed) {
+          ctx.beginPath();
+          ctx.arc(ex, 0, 5.5, 0.15 * Math.PI, 0.85 * Math.PI);
+          ctx.stroke();
+        } else {
+          ctx.beginPath();
+          ctx.arc(ex, -1, 4.8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(ex - 1.5, -2.5, 1.7, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#1e293b';
+        }
+      });
+
+      // Naricita y boca ":3"
+      ctx.fillStyle = '#fb7185';
+      ctx.beginPath();
+      ctx.arc(0, 5, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.arc(-4.5, 8.5, 4.5, 0, Math.PI * 0.85);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(4.5, 8.5, 4.5, Math.PI * 0.15, Math.PI);
+      ctx.stroke();
+
+      // Bigotes
+      ctx.strokeStyle = 'rgba(30, 41, 59, 0.7)';
+      ctx.lineWidth = 1.6;
+      [-1, 1].forEach((dir) => {
+        ctx.beginPath();
+        ctx.moveTo(dir * 26, 2);
+        ctx.lineTo(dir * 46, -2);
+        ctx.moveTo(dir * 26, 7);
+        ctx.lineTo(dir * 46, 8);
+        ctx.stroke();
+      });
+
+      ctx.restore(); // Fin cabeza
+
+      // Patitas inferiores
+      ctx.fillStyle = cat.body;
+      ctx.beginPath();
+      ctx.ellipse(-20, 56, 13, 8, 0, 0, Math.PI * 2);
+      ctx.ellipse(20, 56, 13, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Patitas superiores (se elevan en Nadi Shodhana)
+      const leftHandX = lerp(-24, -5, catRig.pawLeftY);
+      const leftHandY = lerp(28, headY + 6, catRig.pawLeftY);
+      const rightHandX = lerp(24, 5, catRig.pawRightY);
+      const rightHandY = lerp(28, headY + 6, catRig.pawRightY);
+
+      ctx.fillStyle = cat.body;
+      ctx.strokeStyle = cat.accent;
+      ctx.lineWidth = 1.5;
+
+      ctx.beginPath();
+      ctx.arc(leftHandX, leftHandY, 9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(rightHandX, rightHandY, 9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Esfera energética en Órbita Microcósmica
+      if (tech.special === 'orbit' && state.isRunning) {
+        const orbR = 54;
+        const ox = Math.cos(catRig.orbitAngle) * orbR;
+        const oy = Math.sin(catRig.orbitAngle) * orbR + 6;
+        const grad = ctx.createRadialGradient(ox, oy, 1, ox, oy, 12);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.5, '#c084fc');
+        grad.addColorStop(1, 'rgba(192, 132, 252, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(ox, oy, 12, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    function render() {
+      const tech = TECHNIQUES[state.currentTechIndex];
+
+      // Fondo degradado
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+      bgGrad.addColorStop(0, `rgb(${Math.round(catRig.skyCurrentTop[0])}, ${Math.round(catRig.skyCurrentTop[1])}, ${Math.round(catRig.skyCurrentTop[2])})`);
+      bgGrad.addColorStop(1, `rgb(${Math.round(catRig.skyCurrentBottom[0])}, ${Math.round(catRig.skyCurrentBottom[1])}, ${Math.round(catRig.skyCurrentBottom[2])})`);
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, width, height);
+
+      drawParallaxMountains();
+
+      // Partículas flotantes
+      const currentPhase = state.isRunning ? tech.phases[state.phaseIndex] : null;
+      particles.forEach((p) => {
+        let color = tech.colors.particle;
+        if (tech.special === 'tonglen' && currentPhase && currentPhase.type === 'inhale') {
+          color = '#94a3b8'; // Humo gris al inhalar en Tonglen
+        }
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // Posicionamiento seguro sin solapamiento con la tarjeta superior
+      const { promptY, centerY, baseRadius } = getSafeStageLayout();
+      const auraRadius = baseRadius * catRig.breathScale;
+
+      // Texto guía superior sobre el aura
+      ctx.save();
+      ctx.textAlign = 'center';
+      if (state.isRunning && currentPhase) {
+        const remaining = Math.max(0, currentPhase.duration - state.phaseElapsed);
+        ctx.font = '800 19px Nunito, sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(currentPhase.label, width / 2, promptY);
+
+        ctx.font = '900 15px Nunito, sans-serif';
+        ctx.fillStyle = tech.colors.aura;
+        ctx.fillText(`${remaining.toFixed(1)}s`, width / 2, promptY + 22);
+      } else {
+        ctx.font = '700 17px Nunito, sans-serif';
+        ctx.fillStyle = 'rgba(241, 245, 249, 0.88)';
+        ctx.fillText('Acomoda tu postura y sigue el ritmo del gatito', width / 2, promptY);
+      }
+      ctx.restore();
+
+      // Aura exterior punteada
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 6]);
+      ctx.beginPath();
+      ctx.arc(width / 2, centerY, baseRadius * 1.32, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      // Resplandor radial del aura
+      const auraGrad = ctx.createRadialGradient(width / 2, centerY, auraRadius * 0.2, width / 2, centerY, auraRadius * 1.15);
+      auraGrad.addColorStop(0, `${tech.colors.aura}44`);
+      auraGrad.addColorStop(0.75, `${tech.colors.aura}18`);
+      auraGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = auraGrad;
+      ctx.beginPath();
+      ctx.arc(width / 2, centerY, auraRadius * 1.15, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Anillo principal respiratorio
+      ctx.save();
+      ctx.strokeStyle = tech.colors.aura;
+      ctx.lineWidth = 4.5;
+      ctx.shadowColor = tech.colors.aura;
+      ctx.shadowBlur = 16;
+      ctx.beginPath();
+      ctx.arc(width / 2, centerY, auraRadius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      // Dibujar gatito escalado proporcionalmente al aura
+      const catScale = Math.max(0.78, Math.min(1.12, baseRadius / 110));
+      drawCat(width / 2, centerY + 12 * catScale, catScale);
+    }
+
+    function loop(timestamp) {
+      const dt = Math.min(0.05, (timestamp - lastTimestamp) / 1000);
+      lastTimestamp = timestamp;
+      update(dt);
+      render();
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+
+    // =========================================================================
+    // 5. INTERFAZ Y CONTROLES UI
+    // =========================================================================
+    function updateTechniqueUI() {
+      const tech = TECHNIQUES[state.currentTechIndex];
+      document.getElementById('cardTradition').textContent = tech.tradition;
+      document.getElementById('cardTiming').textContent = tech.timingText;
+      document.getElementById('cardTitle').textContent = tech.title;
+      document.getElementById('cardDesc').textContent = tech.desc;
+    }
+
+    function updateHudStats() {
+      const level = getZenLevel();
+      document.getElementById('zenLevel').textContent = level;
+      document.getElementById('purrPoints').textContent = state.purrPoints;
+      const cat = CATS.find(c => c.id === state.selectedCatId) || CATS[0];
+      document.getElementById('catNameHud').textContent = cat.name.split(' ')[0];
+    }
+
+    function toggleSession() {
+      state.isRunning = !state.isRunning;
+      const playIcon = document.getElementById('playIcon');
+      const playText = document.getElementById('playText');
+
+      if (state.isRunning) {
+        state.phaseIndex = 0;
+        state.phaseElapsed = 0;
+        playIcon.textContent = '⏸';
+        playText.textContent = 'Pausar Sesión';
+        triggerPhaseChange(TECHNIQUES[state.currentTechIndex].phases[0]);
+      } else {
+        playIcon.textContent = '▶';
+        playText.textContent = 'Comenzar Sesión';
+        audio.stopPurr();
+      }
+    }
+
+    function selectTechnique(index) {
+      state.currentTechIndex = index;
+      state.phaseIndex = 0;
+      state.phaseElapsed = 0;
+      updateTechniqueUI();
+      if (state.isRunning) {
+        triggerPhaseChange(TECHNIQUES[state.currentTechIndex].phases[0]);
+      }
+    }
+
+    document.getElementById('btnToggleSession').addEventListener('click', toggleSession);
+
+    document.getElementById('btnNextTech').addEventListener('click', () => {
+      const next = (state.currentTechIndex + 1) % TECHNIQUES.length;
+      selectTechnique(next);
+    });
+
+    // Audio toggle
+    document.getElementById('btnSound').addEventListener('click', () => {
+      state.soundEnabled = !state.soundEnabled;
+      const btn = document.getElementById('btnSound');
+      const icon = document.getElementById('soundIcon');
+      const label = document.getElementById('soundLabel');
+
+      if (state.soundEnabled) {
+        audio.init();
+        audio.playBowl(432);
+        btn.classList.add('active-sound');
+        icon.textContent = '🔔';
+        label.textContent = 'Audio Zen On';
+      } else {
+        audio.stopPurr();
+        btn.classList.remove('active-sound');
+        icon.textContent = '🔇';
+        label.textContent = 'Audio Off';
+      }
+    });
+
+    // Modal de Técnicas
+    const techModal = document.getElementById('techModal');
+    function renderTechList() {
+      const list = document.getElementById('techList');
+      list.innerHTML = '';
+      TECHNIQUES.forEach((t, idx) => {
+        if (state.filterCategory !== 'ALL' && t.category !== state.filterCategory) return;
+        const div = document.createElement('div');
+        div.className = `tech-option ${idx === state.currentTechIndex ? 'selected' : ''}`;
+        div.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;">
+            <span class="badge-tradition">${t.tradition}</span>
+            <span class="badge-timing">${t.timingText}</span>
+          </div>
+          <div style="font-weight:900; font-size:1rem; color:#fff; margin-bottom:2px;">${t.title}</div>
+          <div style="font-size:0.82rem; color:#cbd5e1;">${t.desc}</div>
+        `;
+        div.addEventListener('click', () => {
+          selectTechnique(idx);
+          techModal.classList.remove('open');
+        });
+        list.appendChild(div);
+      });
+    }
+
+    document.getElementById('btnOpenTechs').addEventListener('click', () => {
+      renderTechList();
+      techModal.classList.add('open');
+    });
+    document.getElementById('closeTechModal').addEventListener('click', () => techModal.classList.remove('open'));
+    techModal.addEventListener('click', (e) => {
+      if (e.target === techModal) techModal.classList.remove('open');
+    });
+
+    document.querySelectorAll('#traditionTabs .tab-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#traditionTabs .tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.filterCategory = btn.dataset.filter;
+        renderTechList();
+      });
+    });
+
+    // Modal de Gatitos
+    const catsModal = document.getElementById('catsModal');
+    function renderCatsGrid() {
+      const grid = document.getElementById('catsGrid');
+      const level = getZenLevel();
+      grid.innerHTML = '';
+      CATS.forEach((c) => {
+        const unlocked = level >= c.unlockLevel;
+        const selected = state.selectedCatId === c.id;
+        const card = document.createElement('div');
+        card.className = `cat-card ${selected ? 'selected' : ''} ${!unlocked ? 'locked' : ''}`;
+        card.innerHTML = `
+          <div class="cat-swatch" style="background:${c.body}; box-shadow: inset 0 -10px 0 ${c.belly};"></div>
+          <div style="font-weight:900; font-size:1rem; color:#fff;">${c.name}</div>
+          <div style="font-size:0.78rem; color:#cbd5e1; margin-bottom:8px;">${c.title}</div>
+          <div style="font-size:0.75rem; font-weight:800; color:${unlocked ? '#34d399' : '#fbbf24'};">
+            ${unlocked ? (selected ? '✔ Compañero Activo' : 'Disponible — Clic para elegir') : `🔒 Requiere Nivel Zen ${c.unlockLevel}`}
+          </div>
+        `;
+        if (unlocked) {
+          card.addEventListener('click', () => {
+            state.selectedCatId = c.id;
+            saveProgress();
+            updateHudStats();
+            renderCatsGrid();
+          });
+        }
+        grid.appendChild(card);
+      });
+    }
+
+    document.getElementById('btnCats').addEventListener('click', () => {
+      renderCatsGrid();
+      catsModal.classList.add('open');
+    });
+    document.getElementById('closeCatsModal').addEventListener('click', () => catsModal.classList.remove('open'));
+    catsModal.addEventListener('click', (e) => {
+      if (e.target === catsModal) catsModal.classList.remove('open');
+    });
+
+    // Inicializar UI
+    updateTechniqueUI();
+    updateHudStats();
+  </script>
+</body>
+</html>
